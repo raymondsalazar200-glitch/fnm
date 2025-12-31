@@ -1,0 +1,47 @@
+import discord
+from discord.ext import commands
+import asyncio
+
+Token = "YOUR_BOT_TOKEN"
+PREFIX = "!"
+
+intents = discord.Intents.default()
+intents.message_content = True
+intents.guilds = True
+
+bot = commands.Bot(command_prefix=PREFIX, intents=intents)
+
+@bot.event
+async def on_ready():
+    print(f'Logged in as {bot.user}')
+
+@bot.command(name='nuke')
+@commands.has_permissions(administrator=True)
+async def nuke(ctx):
+    """Nukes the server by deleting all channels and roles, then creating new ones."""
+    await ctx.send('Nuking the server...')
+    guild = ctx.guild
+    channels = guild.channels
+    print(f'Deleteing {len(channels)} channels...')
+    for channel in channels:
+        try:
+            await channel.delete()
+        except Exception as e:
+            print(f'Failed to delete channel {channel.name}: {e}')
+    print('all channels deleted.')
+
+    try:
+        new_channel = await guild.create_text_channel('nuked-channel')
+        print(f'Created new channel: {new_channel.name}')
+
+        await new_channel.send('This server has been nuked!')
+    except Exception as e:
+        print(f'Failed to create new channel: {e}')
+@nuke.error
+async def nuke_error(ctx, error):
+    if isinstance(error, commands.MissingPermissions):
+        await ctx.send("You don't have permission to use this command.")
+    else:
+        await ctx.send(f'❌ An error occurred: {str(error)}')
+        print(f'Error: {error}')
+bot.run(Token)
